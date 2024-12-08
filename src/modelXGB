@@ -1,0 +1,108 @@
+import numpy as np
+import pandas as pd
+import xgboost as xgb
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import keras_tuner as kt
+
+# Load the saved LSTM predictions (this assumes the LSTM model has been trained already)
+lstm_preds_train = np.load('lstm_preds_train.npy')
+lstm_preds_test = np.load('lstm_preds_test.npy')
+
+# Check the lengths of LSTM predictions
+print(f"Length of lstm_preds_train: {len(lstm_preds_train)}")
+print(f"Length of lstm_preds_test: {len(lstm_preds_test)}")
+
+# Check the length of the combined dataset
+print(f"Length of combined_data_cleaned: {len(combined_data_cleaned)}")
+
+# Flatten the predictions to 1D arrays (if needed)
+lstm_preds_train = lstm_preds_train.flatten()
+lstm_preds_test = lstm_preds_test.flatten()
+
+# Concatenate the predictions
+lstm_preds = np.concatenate([lstm_preds_train, lstm_preds_test])
+
+# If the lengths don't match, extend lstm_preds with NaN values to match the original data length
+if len(lstm_preds) < len(combined_data_cleaned):
+    lstm_preds = np.pad(lstm_preds, (0, len(combined_data_cleaned) - len(lstm_preds)), constant_values=np.nan)
+
+# Add LSTM predictions as a feature to the dataset
+combined_data_cleaned['lstm_preds'] = lstm_preds
+
+# Now we can proceed with XGBoost model, where lstm_preds are added as a feature
+# Step 5: Prepare Data for XGBoost
+X = combined_data_cleaned[['PM2.5_lag_1', 'PM10_lag_1', 'O3_lag_1', 'PM2.5_rolling_mean', 'PM10_rolling_mean', 'O3_rolling_mean', 'lstm_preds']]
+y = combined_data_cleaned['target_7_days_ahead']
+
+# Split data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Normalize data for XGBoost
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Ensure y_train is sliced to match the size of X_train_scaled
+y_train = y_train[:X_train_scaled.shape[0]]
+
+# Slice X_train_scaled to match the size of lstm_preds_train
+X_train_scaled = X_train_scaled[:len(lstm_preds_train)]
+
+# Combine LSTM predictions with other features for XGBoost (train set)
+X_train_xgb = np.column_stack([lstm_preds_train[:X_train_scaled.shape[0]], X_train_scaled])
+
+# Adjust the length of lstm_preds_test to match X_test_scaled
+if len(lstm_preds_test) > X_test_scaled.shape[0]:
+    lstm_preds_test = lstm_preds_test[:X_test_scaled.shape[0]]
+elif len(lstm_preds_test) < X_test_scaled.shape[0]:
+    X_test_scaled = X_test_scaled[:len(lstm_preds_test)]
+
+# Combine LSTM predictions with other features for XGBoost (test set)
+X_test_xgb = np.column_stack([lstm_preds_test, X_test_scaled])
+
+# Step 6: Hyperparameter Tuning for XGBoost using RandomizedSearchCV (further reduced)
+xgb_model = xgb.XGBRegressor(objective='reg:squarederror')
+
+# Define a very reduced hyperparameter grid for XGBoost
+param_grid_xgb = {
+    'n_estimators': [100],  # Single option for estimators
+    'learning_rate': [0.1],  # Single option for learning rate
+    'max_depth': [6],  # Single option for max depth
+    'subsample': [1.0],  # Single option for subsample
+}
+
+# Debugging: Print shapes to identify mismatch
+print(f"Shape of X_train_xgb: {X_train_xgb.shape}")
+print(f"Shape of y_train: {y_train.shape}")
+
+# Align lengths of X_train_xgb and y_train
+min_length = min(X_train_xgb.shape[0], y_train.shape[0])
+X_train_xgb = X_train_xgb[:min_length]
+y_train = y_train[:min_length]
+
+# Hyperparameter tuning with RandomizedSearchCV
+random_search = RandomizedSearchCV(estimator=xgb_model,
+                                   param_distributions=param_grid_xgb,
+                                   n_iter=3,  # Reduce for faster debugging
+                                   scoring='neg_mean_squared_error',
+                                   cv=2)  # Use cross-validation
+random_search.fit(X_train_xgb, y_train)
+
+# Output the best hyperparameters
+print("Best parameters for XGBoost:", random_search.best_params_)
+
+# Predict using the best model
+y_pred_xgb = random_search.best_estimator_.predict(X_test_xgb)
+
+# Align lengths
+if len(y_test) > len(y_pred_xgb):
+    y_test = y_test[:len(y_pred_xgb)]
+
+# Calculate metrics
+rmse_xgb = np.sqrt(mean_squared_error(y_test, y_pred_xgb))
+mae_xgb = mean_absolute_error(y_test, y_pred_xgb)
+
+print(f"Hybrid Model (LSTM + XGBoost) RMSE: {rmse_xgb}")
+print(f"Hybrid Model (LSTM + XGBoost) MAE: {mae_xgb}")
