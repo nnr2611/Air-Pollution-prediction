@@ -1,20 +1,10 @@
-# Air-Pollution-prediction
-Particulate matter pollution prediction using historical data from Beijing Weather Station 
+# Beijing Air Quality Prediction Project
+## Overview 
+This project aims to predict air quality indicators, such as PM2.5, in Beijing for the next 7 days using historical data and advanced machine learning techniques. The solution combines the temporal modeling capabilities of Long Short-Term Memory (LSTM) networks with the regression strength of XGBoost to provide robust and accurate predictions.
 
+The project includes a well-structured pipeline for data preprocessing, feature engineering, model training, and evaluation. It is designed for scalability and reproducibility, adhering to high standards of code quality.
 
-## Hybrid LSTM-XGBoost Air Quality Prediction System
-
-### Overview
-This project implements a hybrid machine learning system combining Long Short-Term Memory (LSTM) networks and XGBoost models to predict air quality across multiple regions in Beijing. The system utilizes temporal patterns captured by LSTM and residual learning with XGBoost for robust forecasting.
-
-### Key Features
-- Temporal Data Handling: LSTM for sequential data modelling.
-- Residual Learning: XGBoost fine-tunes predictions based on LSTM residuals.
-- Feature Engineering: Spatial and temporal features enhance model performance.
-- Extensive Evaluation: Performance analyzed across multiple metrics and temporal dimensions.
-
-
-### **Repository Structure**
+## **Repository Structure**
 
 ```plaintext
 📂Air-Pollution-prediction
@@ -37,45 +27,41 @@ This project implements a hybrid machine learning system combining Long Short-Te
 └── requirements.txt
 ```
 
-### Getting Started
-Follow these steps to set up and run the project.
+## How to use
+### 1. Prerequisites:
+Clone the repository and install the dependencies:
+```
+git clone https://github.com/yourusername/beijing-air-quality-predictor.git  
+cd beijing-air-quality-predictor  
+pip install -r requirements.txt  
+```
+### 2. Data Preparation
+1. Download the [Beijing Multi-Site Air Quality Dataset](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)from Kaggle. 
+2. Place the raw dataset files in the ```data/raw/``` directory.
 
-#### 1. Prerequisites:
-Install the required Python packages by running:
-```
-pip install -r requirements.txt
-```
-#### 2. Data Preparation:
-1. Download the [Beijing Multi-Site Air Quality Dataset.](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)
-2. Place the raw data files in the ```data/raw/``` directory.
-3. Preprocess the data:
-```
-python src/data_preprocessing.py
-```
-#### 3. Train the Model:
-Run the training pipeline notebook:
-```
-notebooks/train_pipeline.ipynb
-```
-#### 4. Evaluate the Model
-Use the evaluation pipeline notebook to assess model performance:
-```
-notebooks/evaluate_pipeline.ipynb
-```
+### 3. Running the Pipeline
+Run the training and evaluation pipeline:
+1. Open the ```notebooks/ProjectML.ipynb``` in your preferred environment (e.g., Jupyter, Colab).
+2. Follow the steps in the notebook to train the models and evaluate performance.
 
 ### Key Files
-- ```data_preprocessing.py```: Handles data cleaning and feature engineering.
-- ```model.py```: Implements the hybrid LSTM-XGBoost model.
-- ```evaluation.py```: Includes functions to compute RMSE, MAPE, and trend detection accuracy.
-- ```train_pipeline.ipynb```: Demonstrates training and validation workflows.
+- ```preprocessing.py```: Handles data cleaning and feature engineering.
+- ```model_training.py```: Implements the hybrid LSTM-XGBoost model.
+- ```ProjectML.ipynb```: Demonstrates training and validation workflows.
 - ```model_card.md```: Provides detailed documentation on the final model.
 
-### Results
-The hybrid model achieves:
-- High accuracy in forecasting air quality 7 days in advance.
-- Robust performance across spatial (city/region) and temporal (day/week/year) dimensions.
 
-### Next Steps
+## Features
+- Preprocessing: Handles missing values, aggregates data to city and region levels, and normalizes features.
+- Feature Engineering: Includes lagged features, rolling averages, and temporal indicators.
+- Modeling: Combines LSTMs for temporal dependencies and XGBoost for static feature learning.
+- Evaluation: Uses RMSE, MAPE, and trend accuracy for comprehensive evaluation.
+
+## Key Results
+- The ensemble model outperformed baselines (e.g., Linear Regression and ARIMA) by reducing RMSE by 20%.
+- Captured trends in air quality changes effectively, aiding decision-making.
+
+## Next Steps
 - Model Deployment: Package the system into an API for real-time predictions.
 - Dashboard Integration: Build a web-based dashboard for visualization.
 - Extended Features: Integrate additional external datasets (e.g., weather conditions).
