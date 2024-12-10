@@ -51,12 +51,22 @@ The model was trained on the Beijing Multi-Site Air Quality Dataset from Kaggle.
 - Simple linear regression and ARIMA models were used as baselines. The ensemble model outperformed these baselines by reducing RMSE by 20%.
 ## Ethical Considerations
 ### Fairness and Bias
-- The dataset may reflect urban environments more than rural areas, limiting model applicability in less urbanized regions.
-- Efforts were made to reduce bias by aggregating data across regions.
+The model relies on the Beijing Multi-Site Air Quality Dataset, which has significant location and temporal biases:
+1. Location Bias:
+   - The dataset covers only Beijing, limiting the model’s generalizability to other cities or regions with different pollution sources and environmental conditions.
+   - Mitigation Steps:
+       - Recommendations include retraining the model on localized data if applied to other regions.
+       - Introduced region-level aggregation to smooth over variations in site-specific data and provide predictions at a broader spatial scale.
+2. Temporal Bias:
+    - The dataset spans only 4 years, with the most recent data being 8 years old. This limits the model's ability to capture current air quality trends influenced by new policies or urbanization patterns.
+    - Mitigation Steps
+        - Augmented the data with lagged and rolling features to strengthen the model's focus on long-term trends rather than year-specific behaviours.
+        - Highlighted the need for re-validation using newer datasets for up-to-date predictions.
 ### Privacy
-- The dataset does not include personally identifiable information (PII).
+- The dataset does not contain personally identifiable information (PII). Privacy concerns are minimal as the data includes only aggregated air quality measurements.
 ### Security
-- Models and pipelines do not store sensitive data and are designed for transparency.
+- Models and pipelines do not handle sensitive data, minimizing risks of data breaches.
+- Steps are in place to validate inputs and outputs, ensuring robust handling of unexpected or malicious data.
 ## Limitations and Recommendations
 ### Known Limitations
 - Underperformance during anomalous weather events (e.g., sandstorms).
