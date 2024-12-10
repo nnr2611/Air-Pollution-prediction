@@ -33,7 +33,7 @@ cd beijing-air-quality-predictor
 pip install -r requirements.txt  
 ```
 ### 2. Data Preparation
-1. Download the [Beijing Multi-Site Air Quality Dataset](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)from Kaggle. 
+1. Download the [Beijing Multi-Site Air Quality Dataset](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code) from Kaggle. 
 2. Place the raw dataset files in the ```data/raw/``` directory.
 
 ### 3. Running the Pipeline
