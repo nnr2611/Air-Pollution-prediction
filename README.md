@@ -24,7 +24,7 @@ This project implements a hybrid machine learning system combining Long Short-Te
 │   ├── raw/
 │   ├── processed/
 ├──📂 notebooks/
-│   ├── main_notebook.ipynb
+│   ├── ProjectML.ipynb
 │   ├── analysis_notebook.ipynb
 ├── 📂src/
 │   ├── preprocessing.py
