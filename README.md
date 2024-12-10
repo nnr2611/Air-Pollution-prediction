@@ -17,34 +17,24 @@ This project implements a hybrid machine learning system combining Long Short-Te
 ### **Repository Structure**
 
 ```plaintext
-📂 ProjectName/
-│
-├── 📂 src/
-│   ├── __init__.py
-│   ├── data_preprocessing.py   # Preprocessing functions (e.g., cleaning, feature engineering)
-│   ├── model.py                # Model building (LSTM and XGBoost hybrid)
-│   ├── evaluation.py           # Evaluation metrics and utilities
-│
-├── 📂 research/
-│   ├── ProjectML (4).ipynb   # EDA and experimentation
-│
-├── 📂 data/
-│   ├── raw/                         # Raw datasets
-│   ├── processed/                   # Processed datasets for training/testing
-│   └── results/                     # Outputs and predictions
-│
-├── 📂 notebooks/
-│   ├── train_pipeline.ipynb         # Training pipeline demonstration
-│   └── evaluate_pipeline.ipynb      # Model evaluation demonstration
-|
-├── 📂 docs/
-│   ├── architecture_diagram.png     # System architecture diagram
-│   ├── model_card.md                # Model card (markdown file)
-│   └── README.md                    # Main repository readme
-│
-├── requirements.txt                 # Python dependencies
-├── setup.py                         # For creating an installable Python package
-└── LICENSE                          # License information
+📂Air-Pollution-prediction
+├── README.md
+├── Model-Card.md
+├── 📂data/
+│   ├── raw/
+│   ├── processed/
+├──📂 notebooks/
+│   ├── main_notebook.ipynb
+│   ├── analysis_notebook.ipynb
+├── 📂src/
+│   ├── preprocessing.py
+│   ├── feature_engineering.py
+│   ├── model_training.py
+│   └── utils.py
+├── 📂results/
+│   ├── figures/
+│   ├── metrics/
+└── requirements.txt
 ```
 
 ### Getting Started
