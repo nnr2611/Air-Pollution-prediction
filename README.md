@@ -12,7 +12,6 @@ The project includes a well-structured pipeline for data preprocessing, feature 
 ├── Model-Card.md
 ├── 📂data/
 │   ├── raw/
-│   ├── processed/
 ├──📂 notebooks/
 │   ├── ProjectML.ipynb
 │   ├── analysis_notebook.ipynb
@@ -23,7 +22,6 @@ The project includes a well-structured pipeline for data preprocessing, feature 
 │   └── utils.py
 ├── 📂results/
 │   ├── figures/
-│   ├── metrics/
 └── requirements.txt
 ```
 
