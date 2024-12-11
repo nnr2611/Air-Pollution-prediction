@@ -79,7 +79,7 @@ The model relies on the Beijing Multi-Site Air Quality Dataset, which has signif
 - References:
   - Beijing Multi-Site Air Quality Data [Kaggle](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)
 ### License:
-None
+MIT License
 ## Contact Information:
 
 - Onkar Joshi , Nithish Ragav Narayana Shankar , Vanshika Parikh
