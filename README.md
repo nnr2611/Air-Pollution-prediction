@@ -10,6 +10,7 @@ The project includes a well-structured pipeline for data preprocessing, feature 
 📂Air-Pollution-prediction
 ├── README.md
 ├── Model-Card.md
+├── Architecture Diagram.jpeg
 ├── 📂data/
 │   ├── raw/
 ├──📂 notebooks/
