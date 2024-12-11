@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
 
-def load_data(file_path):
-    """Load the Beijing air quality dataset."""
-    return pd.read_csv(file_path, parse_dates=["time"], index_col="time")
 
 def clean_data(df):
     """Clean data by handling missing values and duplicates."""
