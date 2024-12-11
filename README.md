@@ -22,6 +22,7 @@ The project includes a well-structured pipeline for data preprocessing, feature 
 │   └── utils.py
 ├── 📂results/
 │   ├── figures/
+├── LICENSE
 └── requirements.txt
 ```
 
