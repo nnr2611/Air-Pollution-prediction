@@ -39,26 +39,46 @@ pip install -r requirements.txt
 2. Place the raw dataset files in the ```data/raw/``` directory.
 
 ### 3. Running the Pipeline
-Run the training and evaluation pipeline:
-1. Open the ```notebooks/ProjectML.ipynb``` in your preferred environment (e.g., Jupyter, Colab).
-2. Follow the steps in the notebook to train the models and evaluate performance.
+```
+python train.py --horizon 24     # forecast 24 hours ahead
+python train.py --horizon 168    # forecast 7 days ahead
+```
+Outputs go to the directory given by `--out-dir` (`model.joblib`, `lstm.keras`, `metrics.json`, `test_predictions.csv`).
+The dashboard expects one folder per horizon:
+```
+python train.py --horizon 24  --out-dir artifacts/h24
+python train.py --horizon 168 --out-dir artifacts/h168
+```
+
+### 4. Dashboard
+```
+streamlit run dashboard/app.py
+```
+Pick the horizon, models, station and date range; tabs show forecast vs actual, model comparison against baselines, error analysis (by station, residuals) and feature importance, with CSV download.
+The original exploratory LSTM/XGBoost hybrid lives in `notebook/ProjectML.ipynb`.
 
 ### Key Files
-- ```preprocessing.py```: Handles data cleaning and feature engineering.
-- ```model_training.py```: Implements the hybrid LSTM-XGBoost model.
-- ```ProjectML.ipynb```: Demonstrates training and validation workflows.
-- ```model_card.md```: Provides detailed documentation on the final model.
+- `train.py`: end-to-end CLI (load, clean, features, train, evaluate, save).
+- `src/preprocessing.py`: per-station cleaning on a regular hourly grid; chronological split.
+- `src/feature_engineering.py`: lags, shifted rolling means, cyclical time and wind features; per-station target.
+- `src/model_training.py`: XGBoost with early stopping; MAE/RMSE/R2/sMAPE.
 
+## Current Results (chronological hold-out, last ~20% of the period, all 12 stations)
+| Horizon | Model | MAE | RMSE | R2 |
+|---|---|---|---|---|
+| 24 h | XGBoost | 51.1 | 75.7 | 0.173 |
+| 24 h | LSTM | 50.8 | 81.0 | 0.052 |
+| 24 h | Persistence | 57.3 | 87.6 | -0.107 |
+| 168 h | XGBoost | 58.2 | 82.4 | 0.025 |
+| 168 h | LSTM | 55.9 | 88.0 | -0.111 |
+| 168 h | Hybrid (10% LSTM) | 57.6 | 82.4 | 0.024 |
 
-## Features
-- Preprocessing: Handles missing values, aggregates data to city and region levels, and normalizes features.
-- Feature Engineering: Includes lagged features, rolling averages, and temporal indicators.
-- Modeling: Combines LSTMs for temporal dependencies and XGBoost for static feature learning.
-- Evaluation: Uses RMSE, MAPE, and trend accuracy for comprehensive evaluation.
+The LSTM has the lowest MAE but a higher RMSE: it predicts typical values well and underestimates
+pollution spikes. The hybrid blend (weight tuned on a validation slice) is about equal to XGBoost.
 
-## Key Results
-- The ensemble model outperformed baselines (e.g., Linear Regression and ARIMA) by reducing RMSE by 20%.
-- Captured trends in air quality changes effectively, aiding decision-making.
+Skill beyond a day is low: PM2.5 depends heavily on future weather, which the model does not see.
+The earlier "20% RMSE reduction" claim came from the notebook, whose target was shifted across
+interleaved stations, so it is not reproduced here.
 
 ## Next Steps
 - Model Deployment: Package the system into an API for real-time predictions.

@@ -1,83 +1,81 @@
 # Model Card: Beijing Air Quality Predictor
 ## Model Details
 - Model Name: Beijing Air Quality Predictor
-- Model Version: v1.0
+- Model Version: v2.0
 - Model Type: Regression (Time-Series Prediction)
 - Developers: Onkar Joshi , Nithish Ragav Narayana Shankar , Vanshika Parikh
-- Release Date: 10-11-2024
+- Release Date: 10-11-2024 (revised 2026-10-27: pipeline rewritten, results re-measured)
 ## Intended Use
 ### Primary Use
-The model is designed to predict air quality indicators (PM2.5) 7 days in advance at city and region levels using temporal and non-temporal features.
+Forecast hourly PM2.5 (µg/m³) at each of the 12 Beijing monitoring stations, 24 hours or 7 days (168 hours) ahead, for research and exploration.
 
 ### Intended Users
 - Environmental scientists and researchers studying air pollution trends.
-- Policymakers and urban planners for decision-making.
-- Public health organizations for planning interventions.
+- Students and practitioners exploring air-quality forecasting baselines.
+
 ### Out-of-Scope Use Cases
-- Predicting short-term variations (less than one day).
-- Use for real-time air quality monitoring.
-- Application in regions without similar air quality data or environmental factors.
+- Operational health advice, alerts or policy decisions: skill is low (see results) and the data is 2013-2017.
+- Real-time monitoring or horizons shorter than a day.
+- Cities other than Beijing without retraining.
 ## Model/Data Description
 ### Data Used
-The model was trained on the Beijing Multi-Site Air Quality Dataset from Kaggle. The dataset includes hourly air quality readings from multiple monitoring sites in Beijing.
+Beijing Multi-Site Air Quality Dataset (Kaggle / UCI PRSA): hourly pollutant (PM2.5, PM10, SO2, NO2, CO, O3) and weather (temperature, pressure, dew point, rain, wind speed/direction) readings for 12 stations, 2013-03-01 to 2017-02-28.
 
-- Data Sources: Official government monitoring sites in Beijing.
-- Preprocessing Steps:
-  - Handling missing values via interpolation.
-  - Aggregating multi-site data to region level.
-  - Creating lagged and rolling features for time-series modeling.
+- Preprocessing (per station, `src/preprocessing.py`):
+  - Duplicates removed and the series placed on a regular hourly grid.
+  - Gaps up to 6 hours are interpolated; longer gaps stay missing (XGBoost handles NaN; LSTM windows impute 0 after standardisation).
+  - Wind direction converted to degrees and sin/cos.
+- Features (`src/feature_engineering.py`):
+  - Lags of all pollutants (1, 2, 3, 6, 12, 24, 48, 168 hours).
+  - Trailing 24 h and 168 h rolling means (shifted so a row never sees its own value).
+  - Cyclical hour/month encodings, day of week, weekend flag, station identifier.
+- Target: PM2.5 at t + horizon, built per station so it never crosses stations.
 - Biases:
-  - Urban bias as rural areas may have different pollution sources.
-  - Temporal bias due to seasonal or weather-related factors.
-- Features
-  - Temporal Features: Hour, day of the week, and month.
-  - Lagged Features: Previous air quality measurements (lags of 1–7 days).
-  - Rolling Features: Weekly averages for smoothing trends.
-  - Static Features: Site-level and region-level identifiers.
+  - Urban, Beijing-only coverage.
+  - Strong seasonality (winter heating) with only ~4 years of data.
 ## Model Architecture
-- LSTM: Used to capture temporal dependencies.
-- XGBoost: Used to model static features and perform feature-specific learning.
-- Combined predictions from both models via ensembling.
+- **XGBoost** (`n_estimators` up to 600 with early stopping, learning rate 0.05, max depth 6) on the tabular features.
+- **LSTM** (Keras): previous 48 hours of 17 channels plus a station embedding; 1 LSTM layer (16 units), dropout 0.5, L2, Gaussian input noise; trained on a standardised log1p target with Huber loss.
+- **Hybrid:** weighted average of the two, with the weight chosen on a validation slice.
 ## Training and Evaluation
-### Training Procedure
-- LSTMs were trained using TensorFlow/Keras with an Adam optimizer, batch size of 32, and a learning rate of 0.001.
-- XGBoost was trained using 100 estimators, learning rate 0.1, and maximum tree depth of 5.
-- Training was conducted on GPU-accelerated environments (e.g., Google Colab).
-### Evaluation Metrics
-- Root Mean Squared Error (RMSE).
-- Mean Absolute Percentage Error (MAPE).
-- Trend detection accuracy (based on comparison of predicted and actual trends).
-### Baseline Comparison
-- Simple linear regression and ARIMA models were used as baselines. The ensemble model outperformed these baselines by reducing RMSE by 20%.
+### Procedure
+- Chronological split: the last 20% of time (2016-05 to 2017-02) is the hold-out test; the 15% of the remaining period just before it is used for early stopping and for choosing the blend weight. No shuffling.
+- Reproduce with `python train.py --horizon 24` and `python train.py --horizon 168`.
+### Metrics
+MAE, RMSE, R² and sMAPE on the hold-out, pooled over all 12 stations.
+### Results
+| Horizon | Model | MAE | RMSE | R² |
+|---|---|---|---|---|
+| 24 h | XGBoost | 51.1 | 75.7 | 0.173 |
+| 24 h | LSTM | 50.8 | 81.0 | 0.052 |
+| 24 h | Persistence (baseline) | 57.3 | 87.6 | -0.107 |
+| 168 h | XGBoost | 58.2 | 82.4 | 0.025 |
+| 168 h | LSTM | 55.9 | 88.0 | -0.111 |
+| 168 h | Hybrid (10% LSTM) | 57.6 | 82.4 | 0.024 |
+| 168 h | Persistence (baseline) | 75.5 | 112.5 | -0.816 |
+
+(The 24 h hybrid is in `artifacts/h24/metrics.json`.)
+
+- Both models beat naive persistence, but absolute skill is low, especially at 7 days (R² close to 0).
+- The LSTM has the lowest MAE but a higher RMSE because it underestimates pollution spikes. XGBoost is better at high-pollution episodes.
+- The hybrid is roughly equal to XGBoost.
+- Earlier versions of this card and the README claimed a 20% RMSE reduction over linear regression and ARIMA. That figure came from the exploratory notebook, whose target was shifted across interleaved stations, and it is **not reproduced** here. ARIMA and linear regression baselines were not rerun.
 ## Ethical Considerations
 ### Fairness and Bias
-The model relies on the Beijing Multi-Site Air Quality Dataset, which has significant location and temporal biases:
-1. Location Bias:
-   - The dataset covers only Beijing, limiting the model’s generalizability to other cities or regions with different pollution sources and environmental conditions.
-   - Mitigation Steps:
-       - Recommendations include retraining the model on localized data if applied to other regions.
-       - Introduced region-level aggregation to smooth over variations in site-specific data and provide predictions at a broader spatial scale.
-2. Temporal Bias:
-    - The dataset spans only 4 years, with the most recent data being 8 years old. This limits the model's ability to capture current air quality trends influenced by new policies or urbanization patterns.
-    - Mitigation Steps
-        - Augmented the data with lagged and rolling features to strengthen the model's focus on long-term trends rather than year-specific behaviours.
-        - Highlighted the need for re-validation using newer datasets for up-to-date predictions.
-### Privacy
-- The dataset does not contain personally identifiable information (PII). Privacy concerns are minimal as the data includes only aggregated air quality measurements.
-### Security
-- Models and pipelines do not handle sensitive data, minimizing risks of data breaches.
-- Steps are in place to validate inputs and outputs, ensuring robust handling of unexpected or malicious data.
+1. Location bias: Beijing only; retrain before using elsewhere.
+2. Temporal bias: data ends in February 2017 and does not reflect later emission policies or conditions.
+### Privacy and Security
+The dataset has no personal data. The model is not a safety-critical system and should not be used as one.
 ## Limitations and Recommendations
 ### Known Limitations
-- Underperformance during anomalous weather events (e.g., sandstorms).
-- Limited generalizability to regions outside of Beijing without retraining.
-### Recommendations for Use
-- Retrain the model on localized data for use in other regions.
-- Avoid over-reliance on single-point predictions; use confidence intervals where applicable.
-- Combine predictions with domain expertise for critical decision-making.
+- No future weather input: PM2.5 depends strongly on forecast wind and humidity, which are unknown to the model. This is the main reason skill is low beyond a day.
+- Underestimates extreme pollution events.
+- Test metrics are pooled and cover mostly spring to winter; seasonal performance was not broken out.
+### Recommendations
+- Treat forecasts as rough guidance; do not use them as sole input for health decisions.
+- Add weather-forecast features and retrain on recent data before any operational use.
 ## Additional Information
-- References:
-  - Beijing Multi-Site Air Quality Data [Kaggle](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)
+- References: [Beijing Multi-Site Air Quality Data](https://www.kaggle.com/datasets/sid321axn/beijing-multisite-airquality-data-set/code)
 ### License:
 MIT License
 ## Contact Information:
